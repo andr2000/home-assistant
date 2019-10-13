@@ -22,7 +22,8 @@ _LOGGER = logging.getLogger(__name__)
 DEFAULT_NAME = "ebusd"
 DEFAULT_PORT = 8888
 CONF_CIRCUIT = "circuit"
-CACHE_TTL = 900
+CONF_CACHE_TTL = "cache_ttl"
+DEFAULT_CACHE_TTL = 900
 SERVICE_EBUSD_WRITE = "ebusd_write"
 
 MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=15)
@@ -34,6 +35,15 @@ def verify_ebusd_config(config):
     for condition in config[CONF_MONITORED_CONDITIONS]:
         if condition not in SENSOR_TYPES[circuit]:
             raise vol.Invalid("Condition '" + condition + "' not in '" + circuit + "'.")
+    cache_ttl = config[CONF_CACHE_TTL]
+    if cache_ttl < MIN_TIME_BETWEEN_UPDATES.seconds:
+        raise vol.Invalid(
+            "Cache TTL "
+            + str(cache_ttl)
+            + " cannot be less than "
+            + str(MIN_TIME_BETWEEN_UPDATES.seconds)
+            + " seconds."
+        )
     return config
 
 
@@ -44,6 +54,9 @@ CONFIG_SCHEMA = vol.Schema(
                 {
                     vol.Required(CONF_CIRCUIT): cv.string,
                     vol.Required(CONF_HOST): cv.string,
+                    vol.Optional(
+                        CONF_CACHE_TTL, default=DEFAULT_CACHE_TTL
+                    ): cv.positive_int,
                     vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.port,
                     vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
                     vol.Optional(CONF_MONITORED_CONDITIONS, default=[]): cv.ensure_list,
@@ -61,6 +74,7 @@ def setup(hass, config):
     conf = config[DOMAIN]
     name = conf[CONF_NAME]
     circuit = conf[CONF_CIRCUIT]
+    cache_ttl = conf[CONF_CACHE_TTL]
     monitored_conditions = conf.get(CONF_MONITORED_CONDITIONS)
     server_address = (conf.get(CONF_HOST), conf.get(CONF_PORT))
 
@@ -69,7 +83,7 @@ def setup(hass, config):
         import ebusdpy
 
         ebusdpy.init(server_address)
-        hass.data[DOMAIN] = EbusdData(server_address, circuit)
+        hass.data[DOMAIN] = EbusdData(server_address, circuit, cache_ttl)
 
         sensor_config = {
             CONF_MONITORED_CONDITIONS: monitored_conditions,
@@ -89,10 +103,11 @@ def setup(hass, config):
 class EbusdData:
     """Get the latest data from Ebusd."""
 
-    def __init__(self, address, circuit):
+    def __init__(self, address, circuit, cache_ttl):
         """Initialize the data object."""
         self._circuit = circuit
         self._address = address
+        self._cache_ttl = cache_ttl
         self.value = {}
 
     @Throttle(MIN_TIME_BETWEEN_UPDATES)
@@ -103,7 +118,7 @@ class EbusdData:
         try:
             _LOGGER.debug("Opening socket to ebusd %s", name)
             command_result = ebusdpy.read(
-                self._address, self._circuit, name, stype, CACHE_TTL
+                self._address, self._circuit, name, stype, self._cache_ttl
             )
             if command_result is not None:
                 if "ERR:" in command_result:
