@@ -1,8 +1,11 @@
 """Constants for ebus component."""
+from datetime import timedelta
 from homeassistant.const import ENERGY_KILO_WATT_HOUR, TEMP_CELSIUS, PRESSURE_BAR
 
 DOMAIN = "ebusd"
 TIME_SECONDS = "seconds"
+
+MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=15)
 
 #  SensorTypes from ebusdpy module :
 #  0='decimal', 1='time-schedule', 2='switch', 3='string', 4='value;status'
