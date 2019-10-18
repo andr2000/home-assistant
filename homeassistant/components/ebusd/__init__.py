@@ -96,12 +96,21 @@ def setup(hass, config):
 
         for circuit_cfg in conf[CONF_CIRCUITS]:
             sensor_config = {
-                "circuit": circuit_cfg['circuit'],
-                CONF_MONITORED_CONDITIONS: circuit_cfg['monitored_conditions'],
-                "client_name": circuit_cfg['name'],
-                "sensor_types": SENSOR_TYPES[circuit_cfg['circuit']],
+                "circuit": circuit_cfg["circuit"],
+                CONF_MONITORED_CONDITIONS: circuit_cfg["monitored_conditions"],
+                "client_name": circuit_cfg["name"],
+                "sensor_types": SENSOR_TYPES[circuit_cfg["circuit"]],
             }
             load_platform(hass, "sensor", DOMAIN, sensor_config, config)
+
+        """Always add virtual ebusd sensors to track signal etc."""
+        sensor_config = {
+            "circuit": DOMAIN,
+            CONF_MONITORED_CONDITIONS: SENSOR_TYPES[DOMAIN],
+            "client_name": DOMAIN + "ctl",
+            "sensor_types": SENSOR_TYPES[DOMAIN],
+        }
+        load_platform(hass, "sensor", DOMAIN, sensor_config, config)
 
         hass.services.register(DOMAIN, SERVICE_EBUSD_WRITE, hass.data[DOMAIN].write)
 
@@ -126,14 +135,22 @@ class EbusdData:
 
         try:
             _LOGGER.debug("Opening socket to ebusd %s", name)
-            command_result = ebusdpy.read(
-                self._address, circuit, name, stype, self._cache_ttl
-            )
-            if command_result is not None:
-                if "ERR:" in command_result:
-                    _LOGGER.warning(command_result)
-                else:
-                    self.value[name] = command_result
+            """Check if this is a special case: raw commands to ebusd"""
+            if circuit == DOMAIN:
+                command_result = ebusdpy.raw(self._address, name)
+                """Do not parse anything, even errors. Those could be of
+                interest, e.g. while reading e-bus state to detect devices
+                going offline"""
+                self.value[name] = command_result
+            else:
+                command_result = ebusdpy.read(
+                    self._address, circuit, name, stype, self._cache_ttl
+                )
+                if command_result is not None:
+                    if "ERR:" in command_result:
+                        _LOGGER.warning(command_result)
+                    else:
+                        self.value[name] = command_result
         except RuntimeError as err:
             _LOGGER.error(err)
             raise RuntimeError(err)
