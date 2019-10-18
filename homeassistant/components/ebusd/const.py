@@ -11,6 +11,9 @@ MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=15)
 #  0='decimal', 1='time-schedule', 2='switch', 3='string', 4='value;status'
 
 SENSOR_TYPES = {
+    # These are other commands sent to ebusd, but those specific to
+    # circuits.
+    DOMAIN: {"state": ["state", None, "mdi:toggle-switch", 3]},
     "700": {
         "ActualFlowTemperatureDesired": [
             "Hc1ActualFlowTempDesired",
