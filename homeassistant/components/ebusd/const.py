@@ -133,6 +133,10 @@ SENSOR_TYPES = {
         ],
         "RoomThermostat": ["DCRoomthermostat", None, "mdi:toggle-switch", 2],
         "HeatingPartLoad": ["PartloadHcKW", ENERGY_KILO_WATT_HOUR, "mdi:flash", 0],
+        "ModulationTempDesired": ["ModulationTempDesired", TEMP_CELSIUS,
+                                  "mdi:thermometer", 3],
+        "PumpPower": ["PumpPower", PRESSURE_BAR, "mdi:water-pump", 0],
+        "WaterPressure": ["WaterPressure", PRESSURE_BAR, "mdi:water-pump", 4],
     },
 }
 
