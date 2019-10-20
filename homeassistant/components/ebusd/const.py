@@ -135,3 +135,16 @@ SENSOR_TYPES = {
         "HeatingPartLoad": ["PartloadHcKW", ENERGY_KILO_WATT_HOUR, "mdi:flash", 0],
     },
 }
+
+SENSOR_TYPES['b7v'] = SENSOR_TYPES['700']
+
+ADD_B7V = {
+        "DisplayedOutsideTemp": ["DisplayedOutsideTemp", TEMP_CELSIUS,
+                                 "mdi:thermometer", 3],
+        "HwcStorageTemp": ["HwcStorageTemp", TEMP_CELSIUS, "mdi:thermometer",
+                           3],
+}
+
+SENSOR_TYPES['b7v'].update(ADD_B7V)
+
+del ADD_B7V
