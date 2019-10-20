@@ -135,6 +135,9 @@ class EbusdData:
         except RuntimeError as err:
             _LOGGER.error(err)
             raise RuntimeError(err)
+        except ValueError as err:
+            _LOGGER.error(str(err) + ": circuit " + circuit + " condition " +
+                          name)
 
     def write(self, call):
         """Call write methon on ebusd."""
